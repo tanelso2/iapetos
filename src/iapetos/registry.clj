@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [get name])
   (:require [iapetos.registry
              [collectors :as collectors]
-             [utils :as utils]])
+             [utils :as utils]]
+            [iapetos.operations :as ops])
   (:import [io.prometheus.client Collector CollectorRegistry]))
 
 ;; ## Protocol
@@ -21,6 +22,8 @@
     "Unregister the collector under the given name from the registry.")
   (clear [registry]
     "Clear the registry, removing all collectors from it.")
+  (has? [registry metric labels]
+    "Returns a boolean if the registry has a given metric configured with the given labels")
   (get [registry metric labels]
     "Retrieve the collector instance associated with the given metric,
      setting the given labels.")
@@ -57,6 +60,8 @@
       registry
       (update options :subsystem utils/join-subsystem subsystem-name)
       (collectors/initialize)))
+  (has? [_ metric labels]
+    (collectors/has? collectors metric labels options))
   (get [_ metric labels]
     (collectors/by collectors metric labels options))
   (raw [_]
@@ -84,6 +89,60 @@
     (.-options r)
     collectors))
 
+(declare wrap-registry)
+
+(deftype StableRegistryRef [^clojure.lang.Atom a]
+  Registry
+    (register [this metric collector]
+      (swap! a register metric collector)
+      this)
+    (register-lazy [this metric collector]
+      (swap! a register-lazy metric collector)
+      this)
+    (unregister [this metric]
+      (swap! a unregister metric)
+      this)
+    (clear [this]
+      (swap! a (fn [^IapetosRegistry x] 
+                 (println (str "Running clear on " (raw x) 
+                               "\n collectors = " (->> x
+                                                       .-collectors 
+                                                       (keys))))
+                 (clear x)))
+      this)
+    (subsystem [_ subsystem-name]
+      (wrap-registry
+        (subsystem @a subsystem-name)))
+    (has? [_ metric labels]
+      (has? @a metric labels))
+    (get [this metric labels]
+      (if (has? this metric labels)
+        (ops/->LazyCollector (delay (get @a metric labels)))
+        nil))
+    (raw [_]
+      (raw @a))
+    (name [_]
+      (name @a))
+  clojure.lang.IFn
+    (invoke [this k]
+      (get this k {}))
+    (invoke [this k labels]
+      (get this k labels))
+  clojure.lang.ILookup
+    (valAt [this k]
+      (get this k {}))
+    (valAt [this k default]
+      (or (get this k {})
+          default))
+  clojure.lang.IDeref
+    (deref [_] @a))
+
+(defn wrap-registry
+  [r]
+  (-> r
+      atom
+      ->StableRegistryRef))
+    
 ;; ## Constructor
 
 (defn create
@@ -94,7 +153,12 @@
    (->> (collectors/initialize)
         (IapetosRegistry. registry-name registry {}))))
 
+(defn create-stable
+  [& args]
+  (let [r (apply create args)]
+    (wrap-registry r)))
+
 (def default
-  (create
+  (create-stable
     "prometheus_default_registry"
     (CollectorRegistry/defaultRegistry)))

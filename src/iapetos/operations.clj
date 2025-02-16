@@ -119,3 +119,21 @@
   (start-timer [this]
     (let [^Summary$Timer t (.startTimer ^Summary$Child this)]
       #(.observeDuration t))))
+
+(deftype LazyCollector [^clojure.lang.Delay m]
+  clojure.lang.IDeref
+    (deref [_] @m)
+  IncrementableCollector
+    (increment* [this amount] (increment* @this amount))
+  DecrementableCollector
+    (decrement* [this amount] (decrement* @this amount))
+  ObservableCollector
+    (observe [this amount] (observe @this amount))
+  ReadableCollector
+    (read-value [this] (read-value @this))
+  SettableCollector
+    (set-value [this value] (set-value @this value))
+    (set-value-to-current-time [this]
+      (set-value-to-current-time @this))
+  TimeableCollector
+    (start-timer [this] (start-timer @this)))

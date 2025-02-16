@@ -11,10 +11,10 @@
                                     :sign-releases true}]]
 
   :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
-                 [io.prometheus/simpleclient "0.12.0"]
-                 [io.prometheus/simpleclient_common "0.12.0"]
-                 [io.prometheus/simpleclient_pushgateway "0.12.0"]
-                 [io.prometheus/simpleclient_hotspot "0.12.0" :scope "provided"]]
+                 [io.prometheus/simpleclient "0.16.0"]
+                 [io.prometheus/simpleclient_common "0.16.0"]
+                 [io.prometheus/simpleclient_pushgateway "0.16.0"]
+                 [io.prometheus/simpleclient_hotspot "0.16.0" :scope "provided"]]
   :profiles {:dev
              {:dependencies [[org.clojure/test.check "1.1.0"]
                              [aleph "0.4.6"]

@@ -52,12 +52,20 @@
   (prop/for-all
     [registry-fn           (g/registry-fn)
      collectors            (gen/not-empty g/collectors)]
-    (let [registry (apply prometheus/register (registry-fn) collectors)]
+    (let [registry (apply prometheus/register (registry-fn) collectors)
+          {:keys [metric-id type labels]} (first collectors)
+          collector (registry metric-id (into {} (flatten (for [l labels]
+                                                            [(keyword l) "foo"]))))]
+      (case type
+        :counter (prometheus/inc collector)
+        :gauge (prometheus/inc collector)
+        :summary (prometheus/observe collector 1.0)
+        :histogram (prometheus/observe collector 1.0))
       (and (is (not= "" (export/text-format registry)))
            (let [cleared-registry (prometheus/clear registry)]
              (is (= "" (export/text-format cleared-registry))))))))
 
-(defspec t-subsystem=registry-should-only-clear-own-collectors 50
+(defspec t-subsystem-registry-should-only-clear-own-collectors 50
   (prop/for-all
     [registry-fn   (g/registry-fn)
      collectors    g/collectors]

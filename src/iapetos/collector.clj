@@ -27,7 +27,7 @@
   [labels]
   (into-array String (map metric/sanitize labels)))
 
-(defn- label-names
+(defn label-names
   [labels]
   (map metric/dasherize labels))
 

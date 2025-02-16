@@ -82,7 +82,8 @@
              [_subsystem vs] vs
              [_name collector] vs]
          collector)
-       (reduce unregister collectors)))
+       (reduce unregister collectors))
+  (initialize))
 
 ;; ## Read Access
 
@@ -96,6 +97,15 @@
                        [::path-cache [metric options]])
                (utils/metric->path metric options))
            (get-in collectors)))
+
+(defn has?
+  [collectors metric labels options]
+  (let [c (lookup collectors metric options)]
+    (if (some? c)
+      (let [collector-labels (set (get-in c [:collector :labels]))
+            metric-labels (set (collector/label-names (keys labels)))]
+        (= collector-labels metric-labels))
+      false)))
 
 (defn by
   [collectors metric labels options]
