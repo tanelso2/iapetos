@@ -25,8 +25,15 @@
 (defn- unregister-collector-delay
   [^CollectorRegistry registry ^Collector instance]
   (delay
-    (.unregister registry instance)
-    instance))
+    (let [metric-names (->> registry
+                            .metricFamilySamples
+                            enumeration-seq
+                            (map #(seq (.getNames %)))
+                            (flatten)
+                            (into []))]
+      ;; (println metric-names) 
+      (.unregister registry instance)
+      instance)))
 
 (defn- warn-lazy-deprecation!
   [{:keys [collector instance] :as collector-map}]

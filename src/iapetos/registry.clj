@@ -103,11 +103,12 @@
       (swap! a unregister metric)
       this)
     (clear [this]
-      (swap! a (fn [^IapetosRegistry x] 
-                 (println (str "Running clear on " (raw x) 
-                               "\n collectors = " (->> x
-                                                       .-collectors 
-                                                       (keys))))
+      (swap! a (fn [^IapetosRegistry x]
+                 ;; (println (str "Running clear on " (raw x)
+                 ;;               "\n registry = " x
+                 ;;               "\n collectors = " (->> x
+                 ;;                                       .-collectors
+                 ;;                                       (keys))))
                  (clear x)))
       this)
     (subsystem [_ subsystem-name]
@@ -142,7 +143,7 @@
   (-> r
       atom
       ->StableRegistryRef))
-    
+
 ;; ## Constructor
 
 (defn create

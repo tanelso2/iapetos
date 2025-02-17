@@ -71,7 +71,7 @@
     (gen/return
       (fn []
         (let [registry (base-fn registry-name)]
-          (.clear ^CollectorRegistry (iapetos.registry/raw registry))
+          (prometheus/clear registry)
           (reduce
             (fn [r f]
               (f r))
